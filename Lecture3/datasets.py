@@ -63,7 +63,7 @@ class CharLevelNgramDataset(Dataset):
     def __init__(self, text, stop_char='.', context_length=3):
         self.context_length = context_length
         self.text = text
-        self.vocab = [stop_char] + sorted(list(set(''.join(names))))
+        self.vocab = [stop_char] + sorted(list(set(''.join(text))))
         self.ctoi = {c: i  for i, c in enumerate(self.vocab)}
         self.vocab_size = len(self.vocab)
         self.X, self.Y = self.precompute_tensors()

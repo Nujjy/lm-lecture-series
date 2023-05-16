@@ -48,3 +48,17 @@ class TrigramLM(nn.Module):
         o = self.linear(z1)
         return o
 
+class NgramLanguageModel(nn.Module):
+
+    def __init__(self, vocab_size, embedding_dim, ngram=5):
+        super(NgramLanguageModel, self).__init__()
+        ###########################
+        # INSERT YOUR SOLUTION HERE
+        ###########################
+        pass
+
+    def forward(self, inputs):
+        ###########################
+        # INSERT YOUR SOLUTION HERE
+        ###########################
+        pass

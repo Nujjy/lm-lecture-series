@@ -63,7 +63,7 @@ class CharLevelNgramDataset(Dataset):
     def __init__(self, text, stop_char='.', context_length=3):
         self.context_length = context_length
         self.text = text
-        self.vocab = [stop_char] + sorted(list(set(''.join(text))))
+        self.vocab = [stop_char] + sorted(list(set(''.join(self.text))))
         self.ctoi = {c: i  for i, c in enumerate(self.vocab)}
         self.vocab_size = len(self.vocab)
         self.X, self.Y = self.precompute_tensors()
@@ -73,9 +73,10 @@ class CharLevelNgramDataset(Dataset):
         ys = []
         for n in self.text:
             n = ['.'] + list(n) + ['.']
-            ######################
-            ## INSERT CODE HERE ##
-            ######################
+            for c in zip(n, *[n[i:] for i in range(1,self.context_length)]):
+                indices = [self.ctoi[ci] for ci in c]
+                xs.append(indices[:-1])
+                ys.append(indices[-1])
         return torch.tensor(xs), torch.tensor(ys)
 
     def __len__(self):

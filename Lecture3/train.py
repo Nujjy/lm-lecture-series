@@ -4,7 +4,7 @@ from torch.utils.data import Dataset, DataLoader
 
 
 from Lecture3.datasets import CharLevelBigramDataset, CharLevelTrigramDataset, CharLevelNgramDataset
-from Lecture3.ngram_model import BigramLM, BigramLMParam, BigramLMLinear, TrigramLM, EverygramLanguageModel
+from Lecture3.ngram_model import NgramLanguageModel, EverygramLanguageModel, UnigramLM
 
 def collate_fn(batch):
     inputs, targets = batch[0][0], batch[0][1]
@@ -13,8 +13,9 @@ def collate_fn(batch):
 with open('../names.txt', 'r') as f:
     names = f.read().split()
 
+ngram = 5
 
-dataset = CharLevelNgramDataset(names, context_length=5)
+dataset = CharLevelNgramDataset(names, context_length=ngram)
 
 sampler = torch.utils.data.sampler.BatchSampler(
     torch.utils.data.sampler.SequentialSampler(dataset),
@@ -26,7 +27,12 @@ dataloader = DataLoader(dataset, sampler=sampler, collate_fn=collate_fn)
 
 lr = 1
 num_epochs = 1000
-model = EverygramLanguageModel(len(dataset.vocab), embedding_dim=10, ngram=4)
+
+#model = UnigramLM(vocab_size=len(dataset.vocab))
+#model = NgramLanguageModel(len(dataset.vocab), embedding_dim=10, ngram=ngram)
+
+model = EverygramLanguageModel(len(dataset.vocab), embedding_dim=10, ngram=ngram)
+
 criterion = nn.CrossEntropyLoss()
 optimizer = torch.optim.SGD(model.parameters(), lr=lr)
 

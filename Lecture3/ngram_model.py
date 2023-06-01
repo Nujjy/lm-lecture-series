@@ -57,19 +57,19 @@ class UnigramLM(nn.Module):
         self.logits = nn.Parameter(torch.rand(vocab_size))
 
     def forward(self, inputs):
-        return self.logits
+        return self.logits.expand(inputs.size(0), -1)
 
 class NgramLanguageModel(nn.Module):
 
     def __init__(self, vocab_size, embedding_dim=10, ngram=5):
         super(NgramLanguageModel, self).__init__()
-        self.ngram = ngram
+        self.context_len = ngram - 1
         self.embeddings = nn.Embedding(num_embeddings=vocab_size, embedding_dim=embedding_dim)
-        self.linear1 = nn.Linear(ngram * embedding_dim, vocab_size)
+        self.linear1 = nn.Linear(self.context_len * embedding_dim, vocab_size)
 
     def forward(self, inputs):
-        Z = self.embeddings(inputs[:,:self.ngram])
-        z1 = Z.view((Z.size(0)),-1)
+        Z = self.embeddings(inputs[:, :self.context_len])
+        z1 = Z.view((Z.size(0)), -1)
         o = self.linear1(z1)
         return o
 
@@ -80,19 +80,19 @@ class EverygramLanguageModel(nn.Module):
         super(EverygramLanguageModel, self).__init__()
         self.vocab_size = vocab_size
         self.ngram_models = nn.ModuleDict({
-            "1-gram": UnigramLM(vocab_size),
-            **{f"{i+2}-gram": NgramLanguageModel(vocab_size, embedding_dim, i+2) for i in range(ngram-1)}
+            f"1-gram": UnigramLM(vocab_size),
+            **{f"{i}-gram": NgramLanguageModel(vocab_size, embedding_dim, i) for i in range(2, ngram+1)}
         })
-        self.log_lambdas = nn.Parameter(torch.randn(len(self.ngram_models)))
+        self.lambdas = nn.Parameter(torch.randn(len(self.ngram_models)))
 
     def forward(self, inputs):
-        # Compute log lambdas
-        log_lambdas = nn.functional.log_softmax(self.log_lambdas, dim=0)
+        # Compute lambdas
+        log_lambdas = nn.functional.softmax(self.lambdas, dim=0)
 
-        # Compute log probabilities from each model and sum them
-        log_prob = torch.zeros((inputs.size(0), self.vocab_size))
-        for log_lambda, (_, model) in zip(log_lambdas, self.ngram_models.items()):
-            log_prob += (log_lambda + model(inputs))
+        # Compute logits from each model and sum them
+        logits = torch.zeros((inputs.size(0), self.vocab_size))
+        for log_lambda_, (_, model) in zip(self.lambdas, self.ngram_models.items()):
+            logits += (log_lambda_ * model(inputs))  # model(inputs) should return logits
 
-        return log_prob
+        return logits
 

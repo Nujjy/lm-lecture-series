@@ -83,16 +83,16 @@ class EverygramLanguageModel(nn.Module):
             f"1-gram": UnigramLM(vocab_size),
             **{f"{i}-gram": NgramLanguageModel(vocab_size, embedding_dim, i) for i in range(2, ngram+1)}
         })
-        self.lambdas = nn.Parameter(torch.randn(len(self.ngram_models)))
+        self.log_lambdas = nn.Parameter(torch.randn(len(self.ngram_models)))
 
     def forward(self, inputs):
         # Compute lambdas
-        log_lambdas = nn.functional.softmax(self.lambdas, dim=0)
+        lambdas = nn.functional.softmax(self.log_lambdas, dim=0)
 
         # Compute logits from each model and sum them
         logits = torch.zeros((inputs.size(0), self.vocab_size))
-        for log_lambda_, (_, model) in zip(self.lambdas, self.ngram_models.items()):
-            logits += (log_lambda_ * model(inputs))  # model(inputs) should return logits
+        for lambda_, (_, model) in zip(lambdas, self.ngram_models.items()):
+            logits += (lambda_ * model(inputs))  # model(inputs) should return logits
 
         return logits
 
